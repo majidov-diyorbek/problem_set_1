@@ -6,7 +6,11 @@ package twitter;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
+import org.hamcrest.Matcher;
+
+import java.util.*;
 /**
  * SocialNetwork provides methods that operate on a social network.
  * 
@@ -41,7 +45,25 @@ public class SocialNetwork {
      *         either authors or @-mentions in the list of tweets.
      */
     public static Map<String, Set<String>> guessFollowsGraph(List<Tweet> tweets) {
-        throw new RuntimeException("not implemented");
+        Map<String, Set<String>> followsGraph = new HashMap<>();
+        Pattern mentionPattern = Pattern.compile("(?<=@)\\w+");
+
+        for (Tweet tweet : tweets) {
+            String author = tweet.getAuthor().toLowerCase();
+            java.util.regex.Matcher matcher = mentionPattern.matcher(tweet.getText());
+
+            while (matcher.find()) {
+                String mentionedUser = matcher.group().toLowerCase();
+
+                // Avoid self-follow
+                if (!mentionedUser.equals(author)) {
+                    followsGraph.putIfAbsent(author, new HashSet<>());
+                    followsGraph.get(author).add(mentionedUser);
+                }
+            }
+        }
+
+        return followsGraph;
     }
 
     /**
@@ -54,7 +76,18 @@ public class SocialNetwork {
      *         descending order of follower count.
      */
     public static List<String> influencers(Map<String, Set<String>> followsGraph) {
-        throw new RuntimeException("not implemented");
+        Map<String, Integer> followerCount = new HashMap<>();
+
+        for (Set<String> followers : followsGraph.values()) {
+            for (String user : followers) {
+                followerCount.put(user, followerCount.getOrDefault(user, 0) + 1);
+            }
+        }
+
+        List<String> influencers = new ArrayList<>(followerCount.keySet());
+        influencers.sort((u1, u2) -> followerCount.get(u2).compareTo(followerCount.get(u1)));
+
+        return influencers;
     }
 
 }
